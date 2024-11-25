@@ -161,13 +161,16 @@ pub fn stdout() -> Stdout {
     Stdout { inner: &INSTANCE }
 }
 
+const COLOR_CODE: u8 = 34;
+
 #[doc(hidden)]
 pub fn __print_impl(args: core::fmt::Arguments) {
+    let to_be_print = args.as_str().unwrap();
     if cfg!(feature = "smp") {
         // synchronize using the lock in axlog, to avoid interleaving
         // with kernel logs
-        arceos_api::stdio::ax_console_write_fmt(args).unwrap();
+        arceos_api::stdio::ax_console_write_fmt(format_args!("\x1b[{}m{}\x1b[0m", COLOR_CODE, to_be_print)).unwrap();
     } else {
-        stdout().lock().write_fmt(args).unwrap();
+        stdout().lock().write_fmt(format_args!("\x1b[{}m{}\x1b[0m", COLOR_CODE, to_be_print)).unwrap();
     }
 }
